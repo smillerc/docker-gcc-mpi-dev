@@ -1,12 +1,24 @@
 # A baseline docker image for mpi dev using openmpi
 
-FROM gcc:9.1
+ARG GCC_VERSION
+
+FROM gcc:${GCC_VERSION}
 
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y \
-                      cmake libhdf5-dev libcgns-dev build-essential \
+                      curl libhdf5-dev libcgns-dev build-essential \
                       zsh git libopenmpi-dev
+
+# Get a more recent cmake version
+RUN wget -qO- "https://cmake.org/files/v3.14/cmake-3.14.3-Linux-x86_64.tar.gz" | tar --strip-components=1 -xz -C /usr/local
+
+# Install miniconda to /miniconda
+RUN curl -LO http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh
+RUN bash Miniconda3-latest-Linux-x86_64.sh -p /miniconda -b
+RUN rm Miniconda3-latest-Linux-x86_64.sh
+ENV PATH=/miniconda/bin:${PATH}
+RUN conda install -y numpy matplotlib scipy pandas && conda clean --all
 
 # Add a default non-root user to run mpi jobs
 ARG USER=mpi
