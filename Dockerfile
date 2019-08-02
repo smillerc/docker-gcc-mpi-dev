@@ -2,14 +2,28 @@
 
 ARG FEDORA_VERSION
 
-FROM fedora:${FEDORA_VERSION}
+FROM fedora:latest
 
 RUN dnf groupinstall "Development Tools" -y
 
 RUN dnf install -y \
-      openmpi-devel gfortran m4 \
+      libtool file gfortran g++ gcc m4 \
       cmake wget zsh curl git \
-      cgnslib-devel
+      cgnslib-devel zlib vim ack
+
+# Build openmpi with 64bit integers
+RUN cd /tmp \
+      && wget https://download.open-mpi.org/release/open-mpi/v4.0/openmpi-4.0.1.tar.gz \
+      && tar -xvf openmpi-4.0.1.tar.gz \
+      && cd openmpi-4.0.1 \
+      && ./configure --prefix=/software/openmpi \
+      FC=gfortran CC=gcc CXX=g++ \
+      FCFLAGS="-m64 -fdefault-integer-8" \
+      CFLAGS=-m64 CXXFLAGS=-m64 \
+      && make all -j \
+      && make install \
+      && cd /\
+      && rm -rf /tmp/*
 
 # Install miniconda to /miniconda
 RUN cd /tmp && \
@@ -20,9 +34,9 @@ ENV PATH=/miniconda/bin:${PATH}
 RUN conda install -y numpy matplotlib scipy pandas && \
       conda clean --all
 
-RUN pip install pre-commit fprettify
+RUN pip install pre-commit fprettify fortran-language-server
 
-ENV PATH=/usr/lib64/openmpi/bin:${PATH}
+ENV PATH=/software/openmpi/bin:${PATH}
 
 # Add pFunit testing
 RUN cd /tmp && git clone https://github.com/Goddard-Fortran-Ecosystem/pFUnit.git && \
@@ -70,7 +84,5 @@ ENV TERM xterm
 ENV ZSH_THEME agnoster
 
 WORKDIR ${USER_HOME}
-
-
 
 CMD ["/bin/zsh"]
