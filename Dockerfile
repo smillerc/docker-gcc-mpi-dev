@@ -1,42 +1,34 @@
 # A baseline docker image for mpi dev using openmpi
 
-ARG FEDORA_VERSION
-
 FROM fedora:latest
 
 RUN dnf groupinstall "Development Tools" -y
 
 RUN dnf install -y \
       libtool file gfortran g++ gcc m4 \
-      cmake wget zsh curl git \
+      openmpi-devel cmake wget zsh curl git \
       cgnslib-devel zlib vim ack
 
-# Build openmpi with 64bit integers
 RUN cd /tmp \
-      && wget https://download.open-mpi.org/release/open-mpi/v4.0/openmpi-4.0.1.tar.gz \
-      && tar -xvf openmpi-4.0.1.tar.gz \
-      && cd openmpi-4.0.1 \
-      && ./configure --prefix=/software/openmpi \
-      FC=gfortran CC=gcc CXX=g++ \
-      FCFLAGS="-m64 -fdefault-integer-8" \
-      CFLAGS=-m64 CXXFLAGS=-m64 \
-      && make all -j \
-      && make install \
-      && cd /\
-      && rm -rf /tmp/*
+      && wget https://github.com/CGNS/CGNS/archive/v3.3.1.tar.gz  \
+      && tar -xvf v3.3.1.tar.gz \
+      && cd CGNS-3.3.1 \
+      && mkdir build && cd build \
+      && cmake .. \
+      -DCGNS_ENABLE_HDF5=ON -DCGNS_ENABLE_FORTRAN=ON -Wno-dev \
+      -DHDF5_DIR=/usr -DCGNS_ENABLE_64BIT=ON -DHDF5_NEED_ZLIB=ON \
+      -DCMAKE_INSTALL_PREFIX=/software/cgns \
+      && make && make install \
+      && cd / && rm -rf /tmp/*
 
-# Install miniconda to /miniconda
-RUN cd /tmp && \
-      curl -LO http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
-      bash Miniconda3-latest-Linux-x86_64.sh -p /miniconda -b
+ENV PATH /software/cgns/bin:${PATH}
+ENV LD_LIBRARY_PATH /software/cgns/lib:$LD_LIBRARY_PATH
 
-ENV PATH=/miniconda/bin:${PATH}
-RUN conda install -y numpy matplotlib scipy pandas && \
-      conda clean --all
+# ENV PATH=/software/openmpi/bin:${PATH}
+# ENV LD_LIBRARY_PATH=/software/openmpi/lib:$LD_LIBRARY_PATH
 
-RUN pip install pre-commit fprettify fortran-language-server
-
-ENV PATH=/software/openmpi/bin:${PATH}
+ENV PATH /usr/lib64/openmpi/bin:${PATH}
+ENV LD_LIBRARY_PATH /usr/lib64/openmpi/lib:$LD_LIBRARY_PATH
 
 # Add pFunit testing
 RUN cd /tmp && git clone https://github.com/Goddard-Fortran-Ecosystem/pFUnit.git && \
@@ -59,6 +51,15 @@ RUN adduser ${USER} \
 
 ENV USER_HOME /home/${USER}
 RUN chown -R ${USER}:${USER} ${USER_HOME}
+
+# Install miniconda to /miniconda
+RUN cd /tmp && \
+      curl -LO http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh && \
+      bash Miniconda3-latest-Linux-x86_64.sh -p /miniconda -b
+
+ENV PATH=/miniconda/bin:${PATH}
+
+RUN pip install pre-commit fprettify fortran-language-server
 
 # Create working directory
 ARG WORKDIR=/project

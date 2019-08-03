@@ -1,9 +1,10 @@
 program hello_world
       
     use mpi_f08
+    use iso_fortran_env, only: int32, int64
     implicit none
     
-    integer :: ierr, my_rank, size
+    integer(int32) :: ierr, my_rank, size
 
     call mpi_init(ierr)
 
