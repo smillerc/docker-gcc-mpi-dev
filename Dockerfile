@@ -24,11 +24,17 @@ RUN cd /tmp \
 ENV PATH /software/cgns/bin:${PATH}
 ENV LD_LIBRARY_PATH /software/cgns/lib:$LD_LIBRARY_PATH
 
-# ENV PATH=/software/openmpi/bin:${PATH}
-# ENV LD_LIBRARY_PATH=/software/openmpi/lib:$LD_LIBRARY_PATH
-
 ENV PATH /usr/lib64/openmpi/bin:${PATH}
 ENV LD_LIBRARY_PATH /usr/lib64/openmpi/lib:$LD_LIBRARY_PATH
+
+# Add opencoarrays
+RUN git clone https://github.com/sourceryinstitute/OpenCoarrays.git && \
+      cd OpenCoarrays && mkdir build && cd build && \
+      cmake .. -DCMAKE_INSTALL_PREFIX=/software/opencoarrays && \
+      make && make install
+
+ENV PATH /software/opencoarrays/bin:${PATH}
+ENV LD_LIBRARY_PATH /software/opencoarrays/lib:$LD_LIBRARY_PATH
 
 # Add pFunit testing
 RUN cd /tmp && git clone https://github.com/Goddard-Fortran-Ecosystem/pFUnit.git && \
