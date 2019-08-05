@@ -16,7 +16,7 @@ mpicc -o mpi_hello_world mpi_hello_world.c > /dev/null
 echo ok
 
 printf "it should run mpi_hello_world program successfully... "
-mpirun -n 2 ./mpi_hello_world > /dev/null
+mpirun -n `nproc` ./mpi_hello_world > /dev/null
 echo ok
 
 echo "--- Test MPI Fortran installation ---"
@@ -34,5 +34,5 @@ mpifort -o mpi_hello_world_f08 mpi_hello_world.f90 > /dev/null
 echo ok
 
 printf "it should run mpi_hello_world program successfully... "
-mpirun -n 2 ./mpi_hello_world_f08
+mpirun -n `nproc` ./mpi_hello_world_f08
 echo ok
